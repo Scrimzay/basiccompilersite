@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Online Code Compiler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: rgb(82, 82, 82);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        /* Left column: Code editor */
+        #editorContainer {
+            flex: 1;
+            min-width: 400px;
+            margin-right: 20px;
+        }
+
+        #editor {
+            width: 100%;
+            height: 600px;
+            border: 1px solid grey;
+        }
+
+        /* Right column: Input and Output */
+        #ioContainer {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            min-width: 400px;
+        }
+
+        #inputData {
+            width: 100%;
+            height: 290px;
+            border: 1px solid grey;
+            margin-bottom: 20px;
+            padding: 10px;
+            box-sizing: border-box;
+            resize: none;
+        }
+
+        #output {
+            width: 100%;
+            height: 290px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #a8a8a8;
+            white-space: pre-wrap;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        select, button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 16px;
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        @media (max-width: 1000px) {
+            #container {
+                flex-direction: column;
+            }
+
+            #editorContainer, #ioContainer {
+                margin-right: 0;
+                margin-bottom: 20px;
+            }
+
+            #editor, #inputData, #output {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Online Code Compiler</h1>
+    <label for="language">Select Language:</label>
+    <select id="language" onchange="changeLanguage()">
+        {{range .Languages}}
+        <option value="{{.Value}}" {{if eq .Value $.CurrentLanguage}}selected{{end}}>{{.Name}}</option>
+        {{end}}
+    </select>
+    <button onclick="submitCode()">Run Code</button>
+
+    <div id="container">
+        <!-- Left Column: Code Editor -->
+        <div id="editorContainer">
+            <div id="editor"></div>
+        </div>
+
+        <!-- Right Column: Input and Output -->
+        <div id="ioContainer">
+            <label for="inputData">User Input (separate inputs with a semicolon ';'):</label>
+            <textarea id="inputData" placeholder="Enter inputs separated by ';'"></textarea>
+            <label for="output">Output:</label>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <!-- Include Ace Editor -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.14/ace.js"></script>
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/textmate");
+        editor.session.setMode("ace/mode/{{.EditorMode}}");
+        editor.setValue(`{{.DefaultCode}}`, -1);
+
+        function changeLanguage() {
+            var language = document.getElementById('language').value;
+            window.location.href = '/' + language;
+        }
+
+        function submitCode() {
+            var code = editor.getValue();
+            var language = document.getElementById('language').value;
+            var inputData = document.getElementById('inputData').value;
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/run', true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4) {
+                    if (xhr.status == 200) {
+                        document.getElementById('output').innerHTML = '<pre>' + xhr.responseText + '</pre>';
+                    } else {
+                        document.getElementById('output').innerHTML = 'Error: ' + xhr.statusText;
+                    }
+                }
+            };
+            xhr.send('code=' + encodeURIComponent(code) +
+                     '&language=' + encodeURIComponent(language) +
+                     '&inputData=' + encodeURIComponent(inputData));
+        }
+    </script>
+</body>
+</html>
